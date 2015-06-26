@@ -47,6 +47,12 @@ FSManager* FSManager::get()
 	return theFSManager;
 }
 
+void FSManager::del()
+{
+	if (theFSManager)
+		delete theFSManager;
+}
+
 std::list<FSArchiveFile*> FSManager::archiveList()
 {
 	std::list<FSArchiveFile*> archives;

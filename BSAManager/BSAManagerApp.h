@@ -10,6 +10,7 @@ class BSAManagerApp : public wxApp
 {
 public:
 	virtual bool OnInit();
+	virtual int OnExit();
 
 	void InitBSA();
 	void LoadTree();

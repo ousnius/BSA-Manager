@@ -397,7 +397,7 @@ void BSA::addFilesOfFolders(const wxString &folderName, std::vector<std::string>
 			tree.push_back(folderName.ToStdString() + "/" + file.first);
 		}
 		for (auto child : folder->children) {
-			addFilesOfFolders(wxString(folderName + "/" + child.first), tree);
+			addFilesOfFolders(folderName + "/" + wxString(child.first), tree);
 		}
 	}
 }

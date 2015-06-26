@@ -2,7 +2,7 @@
 #include "BSAManagerApp.h"
 #include "FSEngine.h"
 #include "FSManager.h"
- 
+
 IMPLEMENT_APP(BSAManagerApp)
  
 bool BSAManagerApp::OnInit()
@@ -19,6 +19,12 @@ bool BSAManagerApp::OnInit()
 	frame->Thaw();
 
 	return true;
+}
+
+int BSAManagerApp::OnExit()
+{
+	FSManager::del();
+	return 0;
 }
 
 void BSAManagerApp::InitBSA()
@@ -45,7 +51,8 @@ void BSAManagerApp::LoadTree()
 	wxTreeItemId currentRoot = frame->bsaTree->GetRootItem();
 	for (auto it : tree)
 	{
-		if (wxString(it).EndsWith(".bsa"))
+		wxString iter(it);
+		if (iter.EndsWith(".bsa"))
 		{
 			currentRoot = frame->bsaTree->GetRootItem();
 			currentSub.clear();
