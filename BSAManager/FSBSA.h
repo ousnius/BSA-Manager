@@ -39,7 +39,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <wx/file.h>
 #include <wx/filename.h>
 #include <wx/thread.h>
-#include <unordered_map>
 
 
 //! \file bsa.h BSA file, BSAIterator
@@ -52,7 +51,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * \sa MWBSAHeader, MWBSAFileSizeOffset, OBBSAHeader, OBBSAFileInfo, OBBSAFolderInfo
  */
-class BSA final : public FSArchiveFile {
+class BSA final : public FSArchiveFile
+{
 public:
 	//! Constructor; creates a %BSA from the given file path.
 	BSA(const wxString &filePath);
@@ -78,6 +78,10 @@ public:
 	bool hasFile(const wxString&) const override final;
 	//! Returns the size of the file per BSAFile::size().
 	wxInt64 fileSize(const wxString&) const override final;
+	//! Add all files of the folder to the map
+	void addFilesOfFolders(const wxString&, std::vector<std::string>&) const override final;
+	//! Returns the entire file tree of the BSA
+	void fileTree(std::vector<std::string>&) const override final;
 	//! Returns the contents of the specified file
 	/*!
 	* \param fn The filename to get the contents for

@@ -39,15 +39,16 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //! Global BSA file manager
 static FSManager *theFSManager = nullptr;
-// see fsmanager.h
-FSManager* FSManager::get() {
+
+FSManager* FSManager::get()
+{
 	if (!theFSManager)
 		theFSManager = new FSManager();
 	return theFSManager;
 }
 
-// see fsmanager.h
-std::list<FSArchiveFile*> FSManager::archiveList() {
+std::list<FSArchiveFile*> FSManager::archiveList()
+{
 	std::list<FSArchiveFile*> archives;
 
 	std::transform(get()->archives.begin(), get()->archives.end(), back_inserter(archives),
@@ -56,26 +57,28 @@ std::list<FSArchiveFile*> FSManager::archiveList() {
 	return archives;
 }
 
-// see fsmanager.h
-FSManager::FSManager() {
+FSManager::FSManager()
+{
 	wxArrayString list;
 	list = autodetectArchives();
 
-	for (auto an : list) {
+	for (auto an : list)
+	{
 		if (FSArchiveHandler *a = FSArchiveHandler::openArchive(an))
 			archives[an.ToStdString()] = a;
 	}
 }
 
-// see fsmanager.h
-FSManager::~FSManager() {
+FSManager::~FSManager()
+{
 	for (auto it : archives)
 		delete it.second;
 
 	archives.clear();
 }
 
-wxArrayString FSManager::autodetectArchives() {
+wxArrayString FSManager::autodetectArchives()
+{
 	wxArrayString list;
 
 	//TODO: GET GAME DATA PATH FROM REGISTRY
@@ -84,8 +87,9 @@ wxArrayString FSManager::autodetectArchives() {
 
 	//wxString path = Config["GameDataPath"];
 
-	wxString path = "Game\\";
-	if (!path.IsEmpty()) {
+	wxString path = wxGetCwd();
+	if (!path.IsEmpty())
+	{
 		wxArrayString files;
 		wxDir::GetAllFiles(path, &files, "*.bsa", wxDIR_FILES);
 
@@ -95,72 +99,3 @@ wxArrayString FSManager::autodetectArchives() {
 
 	return list;
 }
-
-/* TEMPLATE CODE HERE
-FSSelector::~FSSelector()
-{
-	QSettings cfg;
-	QStringList list( manager->automatic ? QStringList() << "AUTO" : manager->archives.keys() );
-	cfg.setValue( "FSEngine/Archives", list );
-
-	emit Options::get()->sigFlush3D();
-}
-
-void FSSelector::sltAuto( bool x )
-{
-	if ( x )
-	{
-		qDeleteAll( manager->archives );
-		manager->archives.clear();
-		
-		for ( const QString an : manager->autodetectArchives() )
-		{
-			if ( FSArchiveHandler * a = FSArchiveHandler::openArchive( an ) )
-			{
-				manager->archives.insert( an, a );
-			}
-		}
-		
-		model->setStringList( manager->archives.keys() );
-	}
-	
-	manager->automatic = x;
-	
-	btAdd->setDisabled( x );
-	btDel->setDisabled( x );
-	btDelAll->setDisabled( x );
-}
-
-void FSSelector::sltAdd()
-{
-	QStringList list = QFileDialog::getOpenFileNames( this, "Select resource files to add", QString(), "BSA (*.bsa)" );
-	
-	for ( const QString an : list )
-	{
-		if ( ! manager->archives.contains( an ) )
-			if ( FSArchiveHandler * a = FSArchiveHandler::openArchive( an ) )
-				manager->archives.insert( an, a );
-	}
-	
-	model->setStringList( manager->archives.keys() );
-}
-
-void FSSelector::sltDel()
-{
-	QString an = view->currentIndex().data( Qt::DisplayRole ).toString();
-	if ( FSArchiveHandler * a = manager->archives.take( an ) )
-	{
-		delete a;
-	}
-	
-	model->setStringList( manager->archives.keys() );
-}
-
-void FSSelector::sltDelAll()
-{
-	qDeleteAll( manager->archives );
-	manager->archives.clear();
-
-	model->setStringList( QStringList() );
-}
-*/

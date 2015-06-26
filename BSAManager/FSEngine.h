@@ -34,6 +34,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef ARCHIVEENGINE_H
 #define ARCHIVEENGINE_H
 
+#include <map>
+#include <unordered_map>
 #include <wx/string.h>
 #include <wx/datetime.h>
 #include <wx/atomic.h>
@@ -77,6 +79,8 @@ public:
 	virtual bool hasFolder(const wxString&) const = 0;
 	virtual bool hasFile(const wxString&) const = 0;
 	virtual wxInt64 fileSize(const wxString&) const = 0;
+	virtual void addFilesOfFolders(const wxString&, std::vector<std::string>&) const = 0;
+	virtual void fileTree(std::vector<std::string>&) const = 0;
 	virtual bool fileContents(const wxString&, wxMemoryBuffer&) = 0;
 	virtual wxString absoluteFilePath(const wxString&) const = 0;
 

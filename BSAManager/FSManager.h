@@ -43,7 +43,8 @@ class FSArchiveHandler;
 class FSArchiveFile;
 
 //! The file system manager class.
-class FSManager {
+class FSManager
+{
 public:
 	//! Gets the global file system manager
 	static FSManager *get();
