@@ -8,12 +8,16 @@ IMPLEMENT_APP(BSAManagerApp)
 bool BSAManagerApp::OnInit()
 {
 	frame = new BSAManager(nullptr);
-	
-	InitBSA();
-	LoadTree();
-
 	frame->Show(true);
 	SetTopWindow(frame);
+
+	frame->Freeze();
+	InitBSA();
+	wxMessageBox("Scanned BSAs!");
+	LoadTree();
+	wxMessageBox("Loaded tree!");
+	frame->Thaw();
+
 	return true;
 }
 
@@ -32,6 +36,10 @@ void BSAManagerApp::LoadTree()
 {
 	if (frame->bsaTree)
 		frame->bsaTree->AddRoot("BSA");
+	
+	wxString currentSub;
+	wxString bsaName;
+	std::vector<wxString> existingItems;
 
 	wxTreeItemId bsaRoot;
 	wxTreeItemId currentRoot = frame->bsaTree->GetRootItem();
@@ -40,22 +48,37 @@ void BSAManagerApp::LoadTree()
 		if (wxString(it).EndsWith(".bsa"))
 		{
 			currentRoot = frame->bsaTree->GetRootItem();
+			currentSub.clear();
 			bsaRoot.Unset();
 		}
 
 		wxArrayString strArray = wxStringTokenize(it, "/");
 		for (auto str : strArray)
 		{
-			wxTreeItemId foundItem = FindItem(currentRoot, str);
-			if (!foundItem.IsOk())
+			wxString searchSub = currentSub;
+			if (!searchSub.empty())
+				searchSub += "/";
+			searchSub += str;
+
+			if (str == "cypress")
+				int a = 1;
+
+			if (std::find(existingItems.begin(), existingItems.end(), searchSub) == existingItems.end())
 			{
+				currentSub = searchSub;
+				existingItems.push_back(currentSub);
 				currentRoot = frame->bsaTree->AppendItem(currentRoot, str);
 				if (!bsaRoot.IsOk())
+				{
 					bsaRoot = currentRoot;
+					bsaName = currentSub;
+				}
 			}
 			else
 			{
+				wxTreeItemId foundItem = FindItem(currentRoot, str);
 				currentRoot = foundItem;
+				currentSub = searchSub;
 			}
 		}
 
@@ -63,6 +86,8 @@ void BSAManagerApp::LoadTree()
 			currentRoot = bsaRoot;
 		else
 			currentRoot = frame->bsaTree->GetRootItem();
+
+		currentSub = bsaName;
 	}
 }
 
@@ -73,7 +98,7 @@ wxTreeItemId BSAManagerApp::FindItem(wxTreeItemId root, const wxString& sSearchF
 	wxTreeItemId item = frame->bsaTree->GetFirstChild(root, cookie);
 	wxTreeItemId child;
  
-	while(item.IsOk())
+	while (item.IsOk())
 	{
 		wxString sData = frame->bsaTree->GetItemText(item);
 		if (sSearchFor.CompareTo(sData) == 0)
