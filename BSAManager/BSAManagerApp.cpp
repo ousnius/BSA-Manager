@@ -60,9 +60,6 @@ void BSAManagerApp::LoadTree()
 				searchSub += "/";
 			searchSub += str;
 
-			if (str == "cypress")
-				int a = 1;
-
 			if (std::find(existingItems.begin(), existingItems.end(), searchSub) == existingItems.end())
 			{
 				currentSub = searchSub;
