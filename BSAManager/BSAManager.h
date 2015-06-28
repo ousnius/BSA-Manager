@@ -1,36 +1,40 @@
-///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Jun  5 2014)
-// http://www.wxformbuilder.org/
-//
-// PLEASE DO "NOT" EDIT THIS FILE!
-///////////////////////////////////////////////////////////////////////////
-
-#ifndef __BSAMANAGER_H__
-#define __BSAMANAGER_H__
+#pragma once
 
 #include <wx/wx.h>
 #include <wx/treectrl.h>
+#include <wx/tokenzr.h>
+#include <vector>
+#include <unordered_set>
 
-///////////////////////////////////////////////////////////////////////////
+class BSAManager;
 
-
-///////////////////////////////////////////////////////////////////////////////
-/// Class BSAManager
-///////////////////////////////////////////////////////////////////////////////
-class BSAManager : public wxFrame 
+class BSAManagerApp : public wxApp
 {
-	private:
-	
-	protected:
-		virtual void bsaTreeOnTreeItemActivated( wxTreeEvent& event );
-	
-	public:
-		wxTreeCtrl* bsaTree;
-		
-		BSAManager( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("BSA Manager"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 500,300 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
-		
-		~BSAManager();
-	
+public:
+	virtual bool OnInit();
+	virtual int OnExit();
+
+	void InitBSA();
+	void LoadTree();
+	wxTreeItemId FindItem(wxTreeItemId, const wxString&);
+
+private:
+	BSAManager* frame = nullptr;
+	std::vector<std::string> tree;
 };
 
-#endif //__BSAMANAGER_H__
+
+class BSAManager : public wxFrame
+{
+private:
+	BSAManagerApp* appRef = nullptr;
+
+protected:
+	virtual void bsaTreeOnTreeItemActivated(wxTreeEvent& event);
+
+public:
+	wxTreeCtrl* bsaTree = nullptr;
+
+	BSAManager(BSAManagerApp* appRef, wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("BSA Manager"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize(500, 300), long style = wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL);
+	~BSAManager();
+};

@@ -76,14 +76,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="BSAManager.h" />
-    <ClInclude Include="BSAManagerApp.h" />
     <ClInclude Include="FSBSA.h" />
     <ClInclude Include="FSEngine.h" />
     <ClInclude Include="FSManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BSAManager.cpp" />
-    <ClCompile Include="BSAManagerApp.cpp" />
     <ClCompile Include="FSBSA.cpp" />
     <ClCompile Include="FSEngine.cpp" />
     <ClCompile Include="FSManager.cpp" />
