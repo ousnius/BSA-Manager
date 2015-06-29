@@ -135,8 +135,8 @@ protected:
 		}
 
 		BSAFolder *parent; //!< The parent item
-		std::unordered_map<std::string, BSAFolder*> children; //!< A map of child folders
-		std::unordered_map<std::string, BSAFile*> files; //!< A map of files inside the folder
+		std::map<std::string, BSAFolder*> children; //!< A map of child folders
+		std::map<std::string, BSAFile*> files; //!< A map of files inside the folder
 	};
 
 	//! Recursive function to generate the tree structure of folders inside a %BSA
@@ -165,7 +165,7 @@ protected:
 	wxString bsaName;
 
 	//! Map of folders inside a %BSA
-	std::unordered_map<std::string, BSAFolder*> folders;
+	std::map<std::string, BSAFolder*> folders;
 	//! The root folder
 	BSAFolder root;
 

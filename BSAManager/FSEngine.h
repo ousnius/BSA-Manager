@@ -35,7 +35,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define ARCHIVEENGINE_H
 
 #include <map>
-#include <unordered_map>
+#include <vector>
 #include <wx/string.h>
 #include <wx/datetime.h>
 #include <wx/atomic.h>
