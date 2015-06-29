@@ -132,6 +132,10 @@ wxTreeItemId BSAManagerApp::FindItem(wxTreeItemId root, const wxString& sSearchF
 
 int BSAManagerApp::ExportFile(const wxString& bsaName, const wxString& fileName, const wxString& targetPath)
 {
+	wxFileName itInfo(targetPath);
+	if (!wxFileName::Mkdir(itInfo.GetPath(), wxPosixPermissions::wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL))
+		return 3;
+
 	for (FSArchiveFile *archive : FSManager::archiveList())
 	{
 		if (archive && archive->name() == bsaName)
@@ -199,7 +203,6 @@ BSAManager::BSAManager(wxWindow* parent, wxWindowID id, const wxString& title, c
 	bsaTree = new wxTreeCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_DEFAULT_STYLE | wxTR_HIDE_ROOT | wxTR_TWIST_BUTTONS | wxTR_MULTIPLE);
 	sizer->Add(bsaTree, 1, wxALL | wxEXPAND, 0);
 
-
 	SetSizer(sizer);
 	Layout();
 
@@ -207,15 +210,17 @@ BSAManager::BSAManager(wxWindow* parent, wxWindowID id, const wxString& title, c
 
 	// Bind Events
 	bsaTree->Bind(wxEVT_TREE_ITEM_RIGHT_CLICK, &BSAManager::bsaTreeOnTreeItemRightClick, this);
+	bsaTree->Bind(wxEVT_TREE_BEGIN_DRAG, &BSAManager::bsaTreeOnTreeBeginDrag, this);
 }
 
 BSAManager::~BSAManager()
 {
 	// Unbind Events
 	bsaTree->Unbind(wxEVT_TREE_ITEM_RIGHT_CLICK, &BSAManager::bsaTreeOnTreeItemRightClick, this);
+	bsaTree->Unbind(wxEVT_TREE_BEGIN_DRAG, &BSAManager::bsaTreeOnTreeBeginDrag, this);
 }
 
-void BSAManager::bsaTreeOnTreeItemRightClick(wxTreeEvent& event)
+void BSAManager::bsaTreeOnTreeItemRightClick(wxTreeEvent& WXUNUSED(event))
 {
 	wxMenu* menu = new wxMenu();
 	if (menu)
@@ -228,11 +233,88 @@ void BSAManager::bsaTreeOnTreeItemRightClick(wxTreeEvent& event)
 	}
 }
 
+void BSAManager::bsaTreeOnTreeBeginDrag(wxTreeEvent& event)
+{
+	wxArrayTreeItemIds selections;
+	bsaTree->GetSelections(selections);
+
+	wxString tempDir = wxStandardPaths::Get().GetTempDir() + "/BSAManager";
+
+	wxFileDataObject data;
+	for (size_t i = 0; i < selections.Count(); i++)
+	{
+		wxTreeItemId id = selections[i];
+		wxString text;
+		while (id.IsOk())
+		{
+			// Build string by looping upwards
+			text.Prepend("/" + bsaTree->GetItemText(id));
+			wxTreeItemId parent = bsaTree->GetItemParent(id);
+			if (parent.IsOk() && parent != bsaTree->GetRootItem())
+				id = parent;
+			else
+				break;
+		}
+		text.Remove(0, 1);
+
+		int bsaNamePos = text.Find(".bsa");
+		if (bsaNamePos != wxNOT_FOUND)
+		{
+			wxString bsaName(text.SubString(0, bsaNamePos + 3));
+			wxString filePath(text.AfterFirst('/'));
+			wxFileName fileInfo(filePath);
+			wxString fileExt(fileInfo.GetExt());
+
+			// Export folder or multiple files to temp dir
+			if (fileExt.empty() || selections.Count() > 1)
+			{
+				// Ignore BSA root
+				if (filePath.empty())
+					break;
+
+				if (!fileExt.empty())
+				{
+					if (wxGetApp().ExportFile(bsaName, filePath, tempDir + "/" + filePath))
+					{
+						wxMessageBox("Could not export file.", "Error", wxICON_ERROR);
+						break;
+					}
+				}
+				else
+				{
+					if (wxGetApp().ExportFolder(bsaName, filePath, tempDir + "/" + filePath))
+					{
+						wxMessageBox(wxString::Format("Could not export folder: %s", filePath), "Error", wxICON_ERROR);
+						break;
+					}
+				}
+				data.AddFile(tempDir + "/" + filePath);
+			}
+			// Export file to temp dir
+			else
+			{
+				wxString tempTarget = tempDir + "/" + filePath;
+				if (wxGetApp().ExportFile(bsaName, filePath, tempTarget))
+				{
+					wxMessageBox("Could not export file.", "Error", wxICON_ERROR);
+					break;
+				}
+				data.AddFile(tempTarget);
+			}
+		}
+	}
+
+	wxDropSource dropSource(bsaTree);
+	dropSource.SetData(data);
+	wxDragResult result = dropSource.DoDragDrop(wxDrag_AllowMove);
+	wxFileName::Rmdir(tempDir, wxPATH_RMDIR_RECURSIVE);
+}
+
 void BSAManager::bsaTreeOnContextMenu(wxCommandEvent& event)
 {
 	switch (event.GetId())
 	{
-		// Export file(s)
+		// Export selected
 		case 0:
 			statusBar->SetStatusText("Exporting file(s)...");
 			wxString targetFolderStr;
@@ -240,22 +322,19 @@ void BSAManager::bsaTreeOnContextMenu(wxCommandEvent& event)
 			wxArrayTreeItemIds selections;
 			bsaTree->GetSelections(selections);
 
-			for (int i = 0; i < selections.Count(); i++)
+			for (size_t i = 0; i < selections.Count(); i++)
 			{
 				wxTreeItemId id = selections[i];
 				wxString text;
 				while (id.IsOk())
 				{
+					// Build string by looping upwards
 					text.Prepend("/" + bsaTree->GetItemText(id));
 					wxTreeItemId parent = bsaTree->GetItemParent(id);
 					if (parent.IsOk() && parent != bsaTree->GetRootItem())
-					{
 						id = parent;
-					}
 					else
-					{
 						break;
-					}
 				}
 				text.Remove(0, 1);
 
@@ -267,45 +346,49 @@ void BSAManager::bsaTreeOnContextMenu(wxCommandEvent& event)
 					wxFileName fileInfo(filePath);
 					wxString fileExt(fileInfo.GetExt());
 					
-					// Export folder
+					// Export folder or multiple files
 					if (fileExt.empty() || selections.Count() > 1)
 					{
+						// Ignore BSA root
+						if (filePath.empty())
+							break;
+
+						// Only show dialog once
 						if (targetFolderStr.empty())
 						{
 							wxDirDialog targetFolder(this, "Select a target folder", wxEmptyString, wxDIRP_DEFAULT_STYLE);
 							if (targetFolder.ShowModal() == wxID_CANCEL)
-							{
-								statusBar->SetStatusText("Ready!");
-								return;
-							}
+								break;
 
 							targetFolderStr = targetFolder.GetPath();
 						}
 
-						if (wxGetApp().ExportFolder(bsaName, filePath, targetFolderStr))
+						if (!fileExt.empty())
 						{
-							wxMessageBox(wxString::Format("Could not export folder.: %s", filePath), "Error", wxICON_ERROR);
-							continue;
+							if (wxGetApp().ExportFile(bsaName, filePath, targetFolderStr + "/" + filePath))
+							{
+								wxMessageBox("Could not export file.", "Error", wxICON_ERROR);
+								break;
+							}
+						}
+						else
+						{
+							if (wxGetApp().ExportFolder(bsaName, filePath, targetFolderStr))
+							{
+								wxMessageBox(wxString::Format("Could not export folder: %s", filePath), "Error", wxICON_ERROR);
+								break;
+							}
 						}
 					}
+					// Export file
 					else
 					{
-						// Ignore BSA root
-						if (fileExt.CmpNoCase("bsa") == 0)
-						{
-							statusBar->SetStatusText("Ready!");
-							return;
-						}
-
-						// Export file
+						// Only show dialog once
 						if (targetFileStr.empty())
 						{
-							wxFileDialog targetFile(this, "Select a target file", wxEmptyString, wxEmptyString, wxString::Format("*.%s", fileExt), wxFD_SAVE);
+							wxFileDialog targetFile(this, "Select a target file", wxEmptyString, fileInfo.GetName(), wxString::Format("*.%s", fileExt), wxFD_SAVE);
 							if (targetFile.ShowModal() == wxID_CANCEL)
-							{
-								statusBar->SetStatusText("Ready!");
-								return;
-							}
+								break;
 
 							targetFileStr = targetFile.GetPath();
 						}
@@ -313,8 +396,7 @@ void BSAManager::bsaTreeOnContextMenu(wxCommandEvent& event)
 						if (wxGetApp().ExportFile(bsaName, filePath, targetFileStr))
 						{
 							wxMessageBox("Could not export file.", "Error", wxICON_ERROR);
-							statusBar->SetStatusText("Ready!");
-							return;
+							break;
 						}
 					}
 				}

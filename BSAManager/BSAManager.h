@@ -5,6 +5,8 @@
 #include <wx/tokenzr.h>
 #include <wx/file.h>
 #include <wx/filepicker.h>
+#include <wx/dnd.h>
+#include <wx/stdpaths.h>
 #include <vector>
 #include <unordered_set>
 
@@ -33,6 +35,7 @@ class BSAManager : public wxFrame
 {
 private:
 	void bsaTreeOnTreeItemRightClick(wxTreeEvent& event);
+	void bsaTreeOnTreeBeginDrag(wxTreeEvent& event);
 	void bsaTreeOnContextMenu(wxCommandEvent& event);
 
 public:
