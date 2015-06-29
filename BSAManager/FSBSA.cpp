@@ -178,24 +178,27 @@ BSA::~BSA()
 
 bool BSA::canOpen(const wxString &fn)
 {
-	wxFile f(fn);
-	if (f.IsOpened())
+	if (wxFile::Exists(fn))
 	{
-		wxUint32 magic, version;
-
-		if (f.Read((char *)& magic, sizeof(magic)) != 4)
-			return false;
-
-		//qDebug() << "Magic:" << QString::number( magic, 16 );
-		if (magic == OB_BSAHEADER_FILEID)
+		wxFile f(fn);
+		if (f.IsOpened())
 		{
-			if (f.Read((char *)& version, sizeof(version)) != 4)
+			wxUint32 magic, version;
+
+			if (f.Read((char *)& magic, sizeof(magic)) != 4)
 				return false;
 
-			return (version == OB_BSAHEADER_VERSION || version == F3_BSAHEADER_VERSION);
+			//qDebug() << "Magic:" << QString::number( magic, 16 );
+			if (magic == OB_BSAHEADER_FILEID)
+			{
+				if (f.Read((char *)& version, sizeof(version)) != 4)
+					return false;
+
+				return (version == OB_BSAHEADER_VERSION || version == F3_BSAHEADER_VERSION);
+			}
+			else
+				return magic == MW_BSAHEADER_FILEID;
 		}
-		else
-			return magic == MW_BSAHEADER_FILEID;
 	}
 
 	return false;

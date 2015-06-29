@@ -3,6 +3,8 @@
 #include <wx/wx.h>
 #include <wx/treectrl.h>
 #include <wx/tokenzr.h>
+#include <wx/file.h>
+#include <wx/filepicker.h>
 #include <vector>
 #include <unordered_set>
 
@@ -16,7 +18,10 @@ public:
 
 	void InitBSA();
 	void LoadTree();
-	wxTreeItemId FindItem(wxTreeItemId, const wxString&);
+	wxTreeItemId FindItem(wxTreeItemId, const wxString&, const bool& = false);
+
+	int ExportFile(const wxString& bsaName, const wxString& fileName, const wxString& targetPath);
+	int ExportFolder(const wxString& bsaName, const wxString& folderName, const wxString& targetPath);
 
 private:
 	BSAManager* frame = nullptr;
@@ -27,14 +32,13 @@ private:
 class BSAManager : public wxFrame
 {
 private:
-	BSAManagerApp* appRef = nullptr;
-
-protected:
-	virtual void bsaTreeOnTreeItemActivated(wxTreeEvent& event);
+	void bsaTreeOnTreeItemRightClick(wxTreeEvent& event);
+	void bsaTreeOnContextMenu(wxCommandEvent& event);
 
 public:
+	wxStatusBar* statusBar = nullptr;
 	wxTreeCtrl* bsaTree = nullptr;
 
-	BSAManager(BSAManagerApp* appRef, wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("BSA Manager"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize(500, 300), long style = wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL);
+	BSAManager(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("BSA Manager"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize(500, 300), long style = wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL);
 	~BSAManager();
 };
