@@ -50,7 +50,23 @@ FSManager* FSManager::get()
 void FSManager::del()
 {
 	if (theFSManager)
+	{
 		delete theFSManager;
+		theFSManager = nullptr;
+	}
+}
+
+FSManager::FSManager()
+{
+
+}
+
+FSManager::~FSManager()
+{
+	for (auto it : archives)
+		delete it.second;
+
+	archives.clear();
 }
 
 std::list<FSArchiveFile*> FSManager::archiveList()
@@ -63,45 +79,11 @@ std::list<FSArchiveFile*> FSManager::archiveList()
 	return archives;
 }
 
-FSManager::FSManager()
+void FSManager::addArchives(wxArrayString archiveList)
 {
-	wxArrayString list;
-	list = autodetectArchives();
-
-	for (auto an : list)
+	for (auto archive : archiveList)
 	{
-		if (FSArchiveHandler *a = FSArchiveHandler::openArchive(an))
-			archives[an.ToStdString()] = a;
+		if (FSArchiveHandler *a = FSArchiveHandler::openArchive(archive))
+			get()->archives[archive.ToStdString()] = a;
 	}
-}
-
-FSManager::~FSManager()
-{
-	for (auto it : archives)
-		delete it.second;
-
-	archives.clear();
-}
-
-wxArrayString FSManager::autodetectArchives()
-{
-	wxArrayString list;
-
-	//TODO: GET GAME DATA PATH FROM REGISTRY
-	//if (Config["GameDataPath"].empty())
-	//	return list;
-
-	//wxString path = Config["GameDataPath"];
-
-	wxString path = wxGetCwd();
-	if (!path.IsEmpty())
-	{
-		wxArrayString files;
-		wxDir::GetAllFiles(path, &files, "*.bsa", wxDIR_FILES);
-
-		for (auto file : files)
-			list.Add(file);
-	}
-
-	return list;
 }

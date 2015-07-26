@@ -51,6 +51,8 @@ public:
 	static void del();
 	//! Gets the list of globally registered BSA files
 	static std::list<FSArchiveFile*> archiveList();
+	//! Adds archives to the global list
+	static void addArchives(wxArrayString);
 
 protected:
 	//! Constructor
@@ -59,9 +61,6 @@ protected:
 	~FSManager();
 
 	std::map<std::string, FSArchiveHandler*> archives;
-
-	//! Builds a list of global BSAs on Windows platforms
-	static wxArrayString autodetectArchives();
 };
 
 #endif

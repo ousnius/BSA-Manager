@@ -8,17 +8,14 @@ wxDECLARE_APP(BSAManagerApp);
 
 bool BSAManagerApp::OnInit()
 {
+	if (!wxApp::OnInit())
+		return false;
+
 	frame = new BSAManager(nullptr);
 	frame->Show(true);
 	SetTopWindow(frame);
 
-	frame->bsaTree->Freeze();
-	frame->statusBar->SetStatusText("Initializing BSAs...");
-	InitBSA();
-	frame->statusBar->SetStatusText("Loading tree controls...");
-	LoadTree();
-	frame->statusBar->SetStatusText("Ready!");
-	frame->bsaTree->Thaw();
+	InitBSA(cmdFiles);
 
 	return true;
 }
@@ -29,8 +26,30 @@ int BSAManagerApp::OnExit()
 	return 0;
 }
 
-void BSAManagerApp::InitBSA()
+void BSAManagerApp::OnInitCmdLine(wxCmdLineParser& parser)
 {
+	parser.SetDesc(cmdLineDesc);
+}
+
+bool BSAManagerApp::OnCmdLineParsed(wxCmdLineParser& parser)
+{
+	cmdFiles.Clear();
+
+	for (size_t i = 0; i < parser.GetParamCount(); i++)
+		cmdFiles.Add(parser.GetParam(i));
+
+	return true;
+}
+
+void BSAManagerApp::InitBSA(wxArrayString files)
+{
+	frame->bsaTree->Freeze();
+	frame->statusBar->SetStatusText("Initializing BSAs...");
+
+	tree.clear();
+	FSManager::del();
+	FSManager::addArchives(files);
+
 	for (FSArchiveFile *archive : FSManager::archiveList())
 	{
 		if (archive)
@@ -38,11 +57,16 @@ void BSAManagerApp::InitBSA()
 			archive->fileTree(tree);
 		}
 	}
+
+	frame->statusBar->SetStatusText("Loading tree controls...");
+	LoadTree();
+	frame->statusBar->SetStatusText("Ready!");
+	frame->bsaTree->Thaw();
 }
 
 void BSAManagerApp::LoadTree()
 {
-	if (frame->bsaTree)
+	if (frame->bsaTree && !frame->bsaTree->GetRootItem().IsOk())
 		frame->bsaTree->AddRoot("BSA");
 
 	std::string currentSub;
@@ -195,6 +219,14 @@ int BSAManagerApp::ExportFolder(const wxString& bsaName, const wxString& folderN
 BSAManager::BSAManager(wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style) : wxFrame(parent, id, title, pos, size, style)
 {
 	SetSizeHints(wxDefaultSize, wxDefaultSize);
+	
+	menuBar = new wxMenuBar();
+
+	wxMenu* menuFile = new wxMenu();
+	menuFile->Append(0, "Open BSA...");
+	menuBar->Append(menuFile, "File");
+
+	SetMenuBar(menuBar);
 	statusBar = CreateStatusBar();
 
 	wxBoxSizer* sizer;
@@ -211,6 +243,8 @@ BSAManager::BSAManager(wxWindow* parent, wxWindowID id, const wxString& title, c
 	// Bind Events
 	bsaTree->Bind(wxEVT_TREE_ITEM_RIGHT_CLICK, &BSAManager::bsaTreeOnTreeItemRightClick, this);
 	bsaTree->Bind(wxEVT_TREE_BEGIN_DRAG, &BSAManager::bsaTreeOnTreeBeginDrag, this);
+
+	menuFile->Bind(wxEVT_MENU, &BSAManager::menuFileClicked, this);
 }
 
 BSAManager::~BSAManager()
@@ -404,4 +438,22 @@ void BSAManager::bsaTreeOnContextMenu(wxCommandEvent& event)
 			break;
 	}
 	statusBar->SetStatusText("Ready!");
+}
+
+
+void BSAManager::menuFileClicked(wxCommandEvent& event)
+{
+	switch (event.GetId())
+	{
+		// Open
+		case 0:
+			wxFileDialog file(this, "Choose one or more archives...", wxEmptyString, wxEmptyString, "BSA|*.bsa", wxFD_DEFAULT_STYLE | wxFD_MULTIPLE);
+			file.ShowModal();
+
+			wxArrayString files;
+			file.GetPaths(files);
+
+			wxGetApp().InitBSA(files);
+			break;
+	}
 }
