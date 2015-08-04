@@ -87,19 +87,22 @@ void BSAManagerApp::LoadTree()
 			bsaRoot.Unset();
 		}
 
-		wxArrayString strArray = wxStringTokenize(it, "/");
+		wxArrayString strArray = wxStringTokenize(iter, "/");
 		for (auto str : strArray)
 		{
 			std::string searchSub = currentSub;
 			if (!searchSub.empty())
 				searchSub += "/";
+
 			searchSub += str;
 
 			if (existingItems.find(searchSub) == existingItems.end())
 			{
 				currentSub = searchSub;
 				existingItems.insert(currentSub);
-				currentRoot = frame->bsaTree->AppendItem(currentRoot, str);
+				currentRoot = frame->bsaTree->AppendItem(
+					currentRoot, str, -1, -1, new BSATreeItemData(currentSub));
+
 				if (!bsaRoot.IsOk())
 				{
 					bsaRoot = currentRoot;
@@ -244,7 +247,6 @@ BSAManager::BSAManager(wxWindow* parent, wxWindowID id, const wxString& title, c
 
 	// Bind Events
 	bsaTree->Bind(wxEVT_TREE_ITEM_RIGHT_CLICK, &BSAManager::bsaTreeOnTreeItemRightClick, this);
-	bsaTree->Bind(wxEVT_TREE_BEGIN_DRAG, &BSAManager::bsaTreeOnTreeBeginDrag, this);
 
 	menuFile->Bind(wxEVT_MENU, &BSAManager::menuFileClicked, this);
 }
@@ -253,7 +255,6 @@ BSAManager::~BSAManager()
 {
 	// Unbind Events
 	bsaTree->Unbind(wxEVT_TREE_ITEM_RIGHT_CLICK, &BSAManager::bsaTreeOnTreeItemRightClick, this);
-	bsaTree->Unbind(wxEVT_TREE_BEGIN_DRAG, &BSAManager::bsaTreeOnTreeBeginDrag, this);
 }
 
 void BSAManager::bsaTreeOnTreeItemRightClick(wxTreeEvent& WXUNUSED(event))
@@ -267,83 +268,6 @@ void BSAManager::bsaTreeOnTreeItemRightClick(wxTreeEvent& WXUNUSED(event))
 		menu->Unbind(wxEVT_MENU, &BSAManager::bsaTreeOnContextMenu, this);
 		delete menu;
 	}
-}
-
-void BSAManager::bsaTreeOnTreeBeginDrag(wxTreeEvent& event)
-{
-	wxArrayTreeItemIds selections;
-	bsaTree->GetSelections(selections);
-
-	wxString tempDir = wxStandardPaths::Get().GetTempDir() + "/BSAManager";
-
-	wxFileDataObject data;
-	for (size_t i = 0; i < selections.Count(); i++)
-	{
-		wxTreeItemId id = selections[i];
-		wxString text;
-		while (id.IsOk())
-		{
-			// Build string by looping upwards
-			text.Prepend("/" + bsaTree->GetItemText(id));
-			wxTreeItemId parent = bsaTree->GetItemParent(id);
-			if (parent.IsOk() && parent != bsaTree->GetRootItem())
-				id = parent;
-			else
-				break;
-		}
-		text.Remove(0, 1);
-
-		int bsaNamePos = text.Find(".bsa");
-		if (bsaNamePos != wxNOT_FOUND)
-		{
-			wxString bsaName(text.SubString(0, bsaNamePos + 3));
-			wxString filePath(text.AfterFirst('/'));
-			wxFileName fileInfo(filePath);
-			wxString fileExt(fileInfo.GetExt());
-
-			// Export folder or multiple files to temp dir
-			if (fileExt.empty() || selections.Count() > 1)
-			{
-				// Ignore BSA root
-				if (filePath.empty())
-					break;
-
-				if (!fileExt.empty())
-				{
-					if (wxGetApp().ExportFile(bsaName, filePath, tempDir + "/" + filePath))
-					{
-						wxMessageBox("Could not export file.", "Error", wxICON_ERROR);
-						break;
-					}
-				}
-				else
-				{
-					if (wxGetApp().ExportFolder(bsaName, filePath, tempDir + "/" + filePath))
-					{
-						wxMessageBox(wxString::Format("Could not export folder: %s", filePath), "Error", wxICON_ERROR);
-						break;
-					}
-				}
-				data.AddFile(tempDir + "/" + filePath);
-			}
-			// Export file to temp dir
-			else
-			{
-				wxString tempTarget = tempDir + "/" + filePath;
-				if (wxGetApp().ExportFile(bsaName, filePath, tempTarget))
-				{
-					wxMessageBox("Could not export file.", "Error", wxICON_ERROR);
-					break;
-				}
-				data.AddFile(tempTarget);
-			}
-		}
-	}
-
-	wxDropSource dropSource(bsaTree);
-	dropSource.SetData(data);
-	wxDragResult result = dropSource.DoDragDrop(wxDrag_AllowMove);
-	wxFileName::Rmdir(tempDir, wxPATH_RMDIR_RECURSIVE);
 }
 
 void BSAManager::bsaTreeOnContextMenu(wxCommandEvent& event)
@@ -362,17 +286,8 @@ void BSAManager::bsaTreeOnContextMenu(wxCommandEvent& event)
 			{
 				wxTreeItemId id = selections[i];
 				wxString text;
-				while (id.IsOk())
-				{
-					// Build string by looping upwards
-					text.Prepend("/" + bsaTree->GetItemText(id));
-					wxTreeItemId parent = bsaTree->GetItemParent(id);
-					if (parent.IsOk() && parent != bsaTree->GetRootItem())
-						id = parent;
-					else
-						break;
-				}
-				text.Remove(0, 1);
+				if (id.IsOk())
+					text = ((BSATreeItemData*)bsaTree->GetItemData(id))->GetPath();
 
 				int bsaNamePos = text.Find(".bsa");
 				if (bsaNamePos != wxNOT_FOUND)
@@ -442,7 +357,6 @@ void BSAManager::bsaTreeOnContextMenu(wxCommandEvent& event)
 	statusBar->SetStatusText("Ready!");
 }
 
-
 void BSAManager::menuFileClicked(wxCommandEvent& event)
 {
 	switch (event.GetId())
@@ -459,6 +373,7 @@ void BSAManager::menuFileClicked(wxCommandEvent& event)
 			break;
 	}
 }
+
 
 bool DnDBSA::OnDropFiles(wxCoord, wxCoord, const wxArrayString& fileNames)
 {

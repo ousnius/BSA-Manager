@@ -46,7 +46,6 @@ class BSAManager : public wxFrame
 {
 private:
 	void bsaTreeOnTreeItemRightClick(wxTreeEvent& event);
-	void bsaTreeOnTreeBeginDrag(wxTreeEvent& event);
 	void bsaTreeOnContextMenu(wxCommandEvent& event);
 	
 	void menuFileClicked(wxCommandEvent& event);
@@ -69,4 +68,15 @@ public:
 
 private:
     wxTreeCtrl *owner;
+};
+
+class BSATreeItemData : public wxTreeItemData
+{
+public:
+	BSATreeItemData(std::string pPath) { path = pPath; }
+
+	std::string GetPath() { return path; }
+
+private:
+	std::string path;
 };
