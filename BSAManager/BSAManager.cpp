@@ -12,6 +12,7 @@ bool BSAManagerApp::OnInit()
 		return false;
 
 	frame = new BSAManager(nullptr);
+	frame->bsaTree->SetDropTarget(new DnDBSA(frame->bsaTree));
 	frame->Show(true);
 	SetTopWindow(frame);
 
@@ -46,6 +47,7 @@ void BSAManagerApp::InitBSA(wxArrayString files)
 	frame->bsaTree->Freeze();
 	frame->statusBar->SetStatusText("Initializing BSAs...");
 
+	frame->bsaTree->DeleteAllItems();
 	tree.clear();
 	FSManager::del();
 	FSManager::addArchives(files);
@@ -456,4 +458,22 @@ void BSAManager::menuFileClicked(wxCommandEvent& event)
 			wxGetApp().InitBSA(files);
 			break;
 	}
+}
+
+bool DnDBSA::OnDropFiles(wxCoord, wxCoord, const wxArrayString& fileNames)
+{
+    if (owner)
+    {
+		wxArrayString bsaFileNames;
+		for (auto &fn : fileNames)
+			if (fn.EndsWith(".bsa"))
+				bsaFileNames.Add(fn);
+
+		if (!bsaFileNames.IsEmpty())
+			wxGetApp().InitBSA(bsaFileNames);
+    }
+	else
+		return false;
+
+    return true;
 }

@@ -59,3 +59,14 @@ public:
 	BSAManager(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = "BSA Manager", const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize(500, 300), long style = wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL);
 	~BSAManager();
 };
+
+class DnDBSA : public wxFileDropTarget
+{
+public:
+    DnDBSA(wxTreeCtrl *pOwner = nullptr) { owner = pOwner; }
+
+    virtual bool OnDropFiles(wxCoord x, wxCoord y, const wxArrayString& fileNames);
+
+private:
+    wxTreeCtrl *owner;
+};
