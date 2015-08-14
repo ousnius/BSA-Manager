@@ -318,7 +318,7 @@ void BSAManager::bsaTreeOnContextMenu(wxCommandEvent& event)
 						{
 							if (wxGetApp().ExportFile(bsaName, filePath, targetFolderStr + "/" + filePath))
 							{
-								wxMessageBox("Could not export file.", "Error", wxICON_ERROR);
+								wxMessageBox(wxString::Format("Could not export file '%s' from '%s'.", filePath, bsaName), "Error", wxICON_ERROR);
 								break;
 							}
 						}
@@ -346,7 +346,7 @@ void BSAManager::bsaTreeOnContextMenu(wxCommandEvent& event)
 
 						if (wxGetApp().ExportFile(bsaName, filePath, targetFileStr))
 						{
-							wxMessageBox("Could not export file.", "Error", wxICON_ERROR);
+							wxMessageBox(wxString::Format("Could not export file '%s' from '%s'.", filePath, bsaName), "Error", wxICON_ERROR);
 							break;
 						}
 					}
