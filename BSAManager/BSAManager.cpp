@@ -169,25 +169,9 @@ int BSAManagerApp::ExportFile(const wxString& bsaName, const wxString& fileName,
 	{
 		if (archive && archive->name() == bsaName)
 		{
-			wxMemoryBuffer data;
-			archive->fileContents(fileName, data);
-			if (!data.IsEmpty())
-			{
-				wxFile file(targetPath, wxFile::OpenMode::write);
-				if (file.IsOpened())
-				{
-					file.Write(data.GetData(), data.GetBufSize());
-					file.Close();
-				}
-				else
-				{
-					return 2;
-				}
-			}
-			else
-			{
+			if (!archive->exportFile(fileName, targetPath))
 				return 1;
-			}
+
 			break;
 		}
 	}

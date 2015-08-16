@@ -34,6 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <wx/zstream.h>
 #include <wx/mstream.h>
+#include <wx/wfstream.h>
 
 
 /* Default header data */
@@ -414,7 +415,6 @@ void BSA::fileTree(std::vector<std::string> &tree) const
 
 bool BSA::fileContents(const wxString &fn, wxMemoryBuffer &content)
 {
-	//qDebug() << "entering fileContents for" << fn;
 	if (const BSAFile *file = getFile(fn))
 	{
 		wxMutexLocker lock(bsaMutex);
@@ -440,20 +440,62 @@ bool BSA::fileContents(const wxString &fn, wxMemoryBuffer &content)
 				{
 					wxMemoryInputStream memInStream(dataPtr + 4, filesz);
 					wxMemoryOutputStream memOutStream;
-					wxZlibInputStream* zOutput = new wxZlibInputStream(memInStream);
-					zOutput->Read(memOutStream);
-					delete zOutput;
+					wxZlibInputStream zOutput(memInStream);
+					zOutput.Read(memOutStream);
 
 					size_t streamSize = memOutStream.GetSize();
 					content.SetBufSize(streamSize);
 					content.SetDataLen(streamSize);
-					size_t numCopied = memOutStream.CopyTo(content.GetData(), streamSize);
 
+					size_t numCopied = memOutStream.CopyTo(content.GetData(), streamSize);
 					if (numCopied != streamSize)
 						return false;
 				}
 				else
 					content.SetDataLen(filesz);
+
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+bool BSA::exportFile(const wxString &fn, const wxString &target)
+{
+	if (const BSAFile *file = getFile(fn))
+	{
+		wxMutexLocker lock(bsaMutex);
+		if (bsa.Seek(file->offset))
+		{
+			wxInt64 filesz = file->size();
+			ssize_t ok = 1;
+			if (namePrefix) {
+				char len;
+				ok = bsa.Read(&len, 1);
+				filesz -= len;
+				if (ok != wxInvalidOffset)
+					ok = bsa.Seek(file->offset + 1 + len);
+			}
+
+			wxMemoryBuffer content(filesz);
+
+			if (ok != wxInvalidOffset && bsa.Read(content.GetData(), filesz) == filesz)
+			{
+				char *dataPtr = static_cast<char*>(content.GetData());
+				wxFileOutputStream fileOutStream(target);
+
+				if (file->compressed() ^ compressToggle)
+				{
+					wxMemoryInputStream memInStream(dataPtr + 4, filesz);
+					wxZlibInputStream zOutput(memInStream);
+					zOutput.Read(fileOutStream);
+				}
+				else
+				{
+					wxMemoryInputStream memInStream(dataPtr, filesz);
+					memInStream.Read(fileOutStream);
+				}
 
 				return true;
 			}

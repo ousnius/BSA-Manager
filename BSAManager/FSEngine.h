@@ -82,6 +82,7 @@ public:
 	virtual void addFilesOfFolders(const wxString&, std::vector<std::string>&) const = 0;
 	virtual void fileTree(std::vector<std::string>&) const = 0;
 	virtual bool fileContents(const wxString&, wxMemoryBuffer&) = 0;
+	virtual bool exportFile(const wxString&, const wxString&) = 0;
 	virtual wxString absoluteFilePath(const wxString&) const = 0;
 	virtual wxDateTime fileTime(const wxString&) const = 0;
 

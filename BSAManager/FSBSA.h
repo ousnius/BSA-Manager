@@ -89,6 +89,7 @@ public:
 	* \return True if successful
 	*/
 	bool fileContents(const wxString&, wxMemoryBuffer&) override final;
+	bool exportFile(const wxString&, const wxString&) override final;
 
 	//! See QFileInfo::created().
 	wxDateTime fileTime(const wxString&) const override final;
