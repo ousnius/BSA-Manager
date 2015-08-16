@@ -81,7 +81,7 @@ std::list<FSArchiveFile*> FSManager::archiveList()
 
 void FSManager::addArchives(wxArrayString archiveList)
 {
-	for (auto archive : archiveList)
+	for (auto &archive : archiveList)
 	{
 		if (FSArchiveHandler *a = FSArchiveHandler::openArchive(archive))
 			get()->archives[archive.ToStdString()] = a;

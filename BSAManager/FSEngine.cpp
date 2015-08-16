@@ -36,27 +36,22 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //! \file fsengine.cpp File system engine implementations
 
-// see fsengine.h
 FSArchiveHandler *FSArchiveHandler::openArchive(const wxString &fn) {
 	if (BSA::canOpen(fn)) {
 		BSA *bsa = new BSA(fn);
 		if (bsa->open()) {
-			//qDebug() << "BSA Open: " << fn;
 			return new FSArchiveHandler(bsa);
 		}
-		//qDebug() << "fsengine error:" << fn << ":" << bsa->statusText();
 		delete bsa;
 	}
 	return 0;
 }
 
-// see fsengine.h
 FSArchiveHandler::FSArchiveHandler(FSArchiveFile *a) {
 	archive = a;
 	wxAtomicInc(archive->ref);
 }
 
-// see fsengine.h
 FSArchiveHandler::~FSArchiveHandler() {
 	if (!wxAtomicDec(archive->ref))
 		delete archive;

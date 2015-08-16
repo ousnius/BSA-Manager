@@ -85,18 +85,6 @@ struct OBBSAHeader
 	wxUint32 FolderNameLength; //!< Total length of folder names
 	wxUint32 FileNameLength; //!< Total length of file names
 	wxUint32 FileFlags; //!< File flags
-
-	//friend QDebug operator<<(QDebug dbg, const OBBSAHeader & head)
-	//{
-	//	return dbg << "BSAHeader:"
-	//		<< "\n  folder offset" << head.FolderRecordOffset
-	//		<< "\n  archive flags" << head.ArchiveFlags
-	//		<< "\n  folder Count" << head.FolderCount
-	//		<< "\n  file Count" << head.FileCount
-	//		<< "\n  folder name length" << head.FolderNameLength
-	//		<< "\n  file name length" << head.FileNameLength
-	//		<< "\n  file flags" << head.FileFlags;
-	//}
 };
 
 //! Info for a file inside an Oblivion BSA
@@ -142,25 +130,20 @@ bool BSA::BSAFile::compressed() const
 //! Reads a foldername sized string (length + null-terminated string) from the BSA
 static bool BSAReadSizedString(wxFile &bsa, wxString &s)
 {
-	//qDebug() << "BSA is at" << bsa.pos();
 	wxUint8 len;
 	if (bsa.Read((char *)&len, 1) != 1)
 	{
-		//qDebug() << "bailout on" << __FILE__ << "line" << __LINE__;
 		return false;
 	}
-	//qDebug() << "folder string length is" << len;
 
 	wxMemoryBuffer b(len);
 	if (bsa.Read(b.GetData(), len) == len)
 	{
 		s = b;
-		//qDebug() << "bailout on" << __FILE__ << "line" << __LINE__;
 		return true;
 	}
 	else
 	{
-		//qDebug() << "bailout on" << __FILE__ << "line" << __LINE__;
 		return false;
 	}
 }
@@ -189,7 +172,6 @@ bool BSA::canOpen(const wxString &fn)
 			if (f.Read((char *)& magic, sizeof(magic)) != 4)
 				return false;
 
-			//qDebug() << "Magic:" << QString::number( magic, 16 );
 			if (magic == OB_BSAHEADER_FILEID)
 			{
 				if (f.Read((char *)& version, sizeof(version)) != 4)
@@ -205,7 +187,6 @@ bool BSA::canOpen(const wxString &fn)
 	return false;
 }
 
-// see bsa.h
 bool BSA::open()
 {
 	wxMutexLocker lock(bsaMutex);
@@ -232,8 +213,6 @@ bool BSA::open()
 			if (bsa.Read((char *)& header, sizeof(header)) != sizeof(header))
 				throw wxString("header size");
 
-			//qWarning() << bsaName << header;
-
 			if ((header.ArchiveFlags & OB_BSAARCHIVE_PATHNAMES) == 0 || (header.ArchiveFlags & OB_BSAARCHIVE_FILENAMES) == 0)
 				throw wxString("header flags");
 
@@ -253,8 +232,6 @@ bool BSA::open()
 
 			wxUint32 fileNameIndex = 0;
 
-			//qDebug() << bsa.pos() - header.FileNameLength << fileNames;
-
 			if (bsa.Seek(header.FolderRecordOffset) == wxInvalidOffset)
 				throw wxString("folder info seek");
 
@@ -267,21 +244,15 @@ bool BSA::open()
 			for (const OBBSAFolderInfo folderInfo : folderInfos)
 			{
 				// useless?
-				/*
-				qDebug() << __LINE__ << "position" << bsa.pos() << "offset" << folderInfo.offset;
-				if ( folderInfo.offset < header.FileNameLength || ! bsa.seek( folderInfo.offset - header.FileNameLength ) )
-				throw QString( "folder content seek" );
-				*/
+				//if (folderInfo.offset < header.FileNameLength || ! bsa.seek(folderInfo.offset - header.FileNameLength))
+				//	throw QString("folder content seek");
 
 
 				wxString folderName;
 				if (!BSAReadSizedString(bsa, folderName) || folderName.IsEmpty())
 				{
-					//qDebug() << "folderName" << folderName;
 					throw wxString("folder name read");
 				}
-
-				// qDebug() << folderName;
 
 				BSAFolder * folder = insertFolder(folderName);
 
@@ -350,8 +321,6 @@ bool BSA::open()
 					fname = fname.Remove(0, x + 1);
 				}
 
-				// qDebug() << "inserting" << dname << fname;
-
 				insertFile(insertFolder(dname), fname, sizeOffset[c].size, dataOffset + sizeOffset[c].offset);
 			}
 		}
@@ -386,7 +355,7 @@ void BSA::close()
 
 wxInt64 BSA::fileSize(const wxString & fn) const
 {
-	// note: lazy size count (not accurate for compressed files)
+	// Note: lazy size count (not accurate for compressed files)
 	if (const BSAFile *file = getFile(fn))
 		return file->size();
 
@@ -397,10 +366,10 @@ void BSA::addFilesOfFolders(const wxString &folderName, std::vector<std::string>
 {
 	if (const BSAFolder *folder = getFolder(folderName)) {
 		tree.push_back(folderName.ToStdString());
-		for (auto child : folder->children) {
+		for (auto &child : folder->children) {
 			addFilesOfFolders(folderName + "/" + wxString(child.first), tree);
 		}
-		for (auto file : folder->files) {
+		for (auto &file : folder->files) {
 			tree.push_back(folderName.ToStdString() + "/" + file.first);
 		}
 	}
@@ -409,7 +378,7 @@ void BSA::addFilesOfFolders(const wxString &folderName, std::vector<std::string>
 void BSA::fileTree(std::vector<std::string> &tree) const
 {
 	tree.push_back(name().ToStdString());
-	for (auto folder : root.children)
+	for (auto &folder : root.children)
 		addFilesOfFolders(wxString(folder.first), tree);
 }
 
@@ -526,8 +495,6 @@ BSA::BSAFolder *BSA::insertFolder(wxString name)
 	BSAFolder *folder = folders[name.ToStdString()];
 	if (!folder)
 	{
-		// qDebug() << "inserting" << name;
-
 		folder = new BSAFolder;
 		folders[name.ToStdString()] = folder;
 
@@ -617,7 +584,6 @@ bool BSA::hasFolder(const wxString &fn) const
 	return getFolder(fn) != nullptr;
 }
 
-// see bsa.h
 wxDateTime BSA::fileTime(const wxString&) const
 {
 	wxDateTime created;
