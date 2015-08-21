@@ -2,6 +2,7 @@
 
 #include <wx/wx.h>
 #include <wx/cmdline.h>
+#include <wx/msw/registry.h>
 #include <wx/treectrl.h>
 #include <wx/tokenzr.h>
 #include <wx/file.h>

@@ -213,6 +213,7 @@ BSAManager::BSAManager(wxWindow* parent, wxWindowID id, const wxString& title, c
 
 	wxMenu* menuFile = new wxMenu();
 	menuFile->Append(0, "Open BSA...");
+	menuFile->Append(1, "Set as default program");
 	menuBar->Append(menuFile, "File");
 
 	SetMenuBar(menuBar);
@@ -345,16 +346,46 @@ void BSAManager::menuFileClicked(wxCommandEvent& event)
 {
 	switch (event.GetId())
 	{
-		// Open
-		case 0:
-			wxFileDialog file(this, "Choose one or more archives...", wxEmptyString, wxEmptyString, "BSA|*.bsa", wxFD_DEFAULT_STYLE | wxFD_MULTIPLE);
-			file.ShowModal();
+	case 0: // Open
+	{
+		wxFileDialog file(this, "Choose one or more archives...", wxEmptyString, wxEmptyString, "BSA|*.bsa", wxFD_DEFAULT_STYLE | wxFD_MULTIPLE);
+		file.ShowModal();
 
-			wxArrayString files;
-			file.GetPaths(files);
+		wxArrayString files;
+		file.GetPaths(files);
 
-			wxGetApp().InitBSA(files);
-			break;
+		wxGetApp().InitBSA(files);
+		break;
+	}
+
+	case 1: // Set as default program
+	{
+		int res = wxMessageBox("Do you want to set this program as the .BSA default for all users (requires admin elevation)?", "BSA Manager", wxYES_NO);
+		if (res == wxYES)
+		{
+			wxRegKey keyApp(wxRegKey::HKLM, "Software\\Classes\\Applications\\" + wxFileName::FileName(wxStandardPaths::Get().GetExecutablePath()).GetFullName() + "\\shell\\open\\command");
+			if (keyApp.Create())
+				if (!keyApp.SetValue(wxEmptyString, "\"" + wxStandardPaths::Get().GetExecutablePath() + "\"" + " \"%1\""))
+					break;
+
+			wxRegKey keyRoot(wxRegKey::HKLM, "Software\\Classes\\BSAManager");
+			if (keyRoot.Create())
+				keyRoot.SetValue(wxEmptyString, "Bethesda File Archive");
+
+			wxRegKey keyOpen(wxRegKey::HKLM, "Software\\Classes\\BSAManager\\shell\\open\\command");
+			if (keyOpen.Create())
+				keyOpen.SetValue(wxEmptyString, "\"" + wxStandardPaths::Get().GetExecutablePath() + "\"" + " \"%1\"");
+
+			wxRegKey keyIcon(wxRegKey::HKLM, "Software\\Classes\\BSAManager\\DefaultIcon");
+			if (keyIcon.Create())
+				keyIcon.SetValue(wxEmptyString, wxStandardPaths::Get().GetExecutablePath() + ",0");
+
+			wxRegKey keyExt(wxRegKey::HKLM, "Software\\Classes\\.bsa");
+			if (keyExt.Create())
+				keyExt.SetValue(wxEmptyString, "BSAManager");
+		}
+		break;
+	}
 	}
 }
 
