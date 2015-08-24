@@ -232,6 +232,7 @@ BSAManager::BSAManager(wxWindow* parent, wxWindowID id, const wxString& title, c
 
 	// Bind Events
 	bsaTree->Bind(wxEVT_TREE_ITEM_RIGHT_CLICK, &BSAManager::bsaTreeOnTreeItemRightClick, this);
+	bsaTree->Bind(wxEVT_TREE_SEL_CHANGED, &BSAManager::bsaTreeOnTreeSelChanged, this);
 
 	menuFile->Bind(wxEVT_MENU, &BSAManager::menuFileClicked, this);
 }
@@ -240,6 +241,7 @@ BSAManager::~BSAManager()
 {
 	// Unbind Events
 	bsaTree->Unbind(wxEVT_TREE_ITEM_RIGHT_CLICK, &BSAManager::bsaTreeOnTreeItemRightClick, this);
+	bsaTree->Unbind(wxEVT_TREE_SEL_CHANGED, &BSAManager::bsaTreeOnTreeSelChanged, this);
 }
 
 void BSAManager::bsaTreeOnTreeItemRightClick(wxTreeEvent& WXUNUSED(event))
@@ -252,6 +254,30 @@ void BSAManager::bsaTreeOnTreeItemRightClick(wxTreeEvent& WXUNUSED(event))
 		PopupMenu(menu);
 		menu->Unbind(wxEVT_MENU, &BSAManager::bsaTreeOnContextMenu, this);
 		delete menu;
+	}
+}
+
+void BSAManager::bsaTreeOnTreeSelChanged(wxTreeEvent& event)
+{
+	wxArrayTreeItemIds selections;
+	bsaTree->GetSelections(selections);
+
+	for (size_t i = 0; i < selections.Count(); i++)
+		bsaTreeUnselectChildren(selections[i]);
+}
+
+void BSAManager::bsaTreeUnselectChildren(wxTreeItemId root)
+{
+	wxTreeItemIdValue cookie;
+	if (root.IsOk())
+	{
+		wxTreeItemId child = bsaTree->GetFirstChild(root, cookie);
+		while (child.IsOk())
+		{
+			bsaTree->UnselectItem(child);
+			bsaTreeUnselectChildren(child);
+			child = bsaTree->GetNextChild(root, cookie);
+		}
 	}
 }
 

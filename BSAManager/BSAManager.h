@@ -47,6 +47,8 @@ class BSAManager : public wxFrame
 {
 private:
 	void bsaTreeOnTreeItemRightClick(wxTreeEvent& event);
+	void bsaTreeOnTreeSelChanged(wxTreeEvent& event);
+	void bsaTreeUnselectChildren(wxTreeItemId);
 	void bsaTreeOnContextMenu(wxCommandEvent& event);
 	
 	void menuFileClicked(wxCommandEvent& event);
