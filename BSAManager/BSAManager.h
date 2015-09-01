@@ -3,6 +3,7 @@
 #include <wx/wx.h>
 #include <wx/cmdline.h>
 #include <wx/msw/registry.h>
+#include <wx/artprov.h>
 #include <wx/treectrl.h>
 #include <wx/tokenzr.h>
 #include <wx/file.h>
@@ -51,10 +52,10 @@ private:
 	void bsaTreeUnselectChildren(wxTreeItemId);
 	void bsaTreeOnContextMenu(wxCommandEvent& event);
 	
-	void menuFileClicked(wxCommandEvent& event);
+	void toolBarOpenClicked(wxCommandEvent& event);
 
 public:
-	wxMenuBar* menuBar = nullptr;
+	wxToolBar* toolBar = nullptr;
 	wxStatusBar* statusBar = nullptr;
 	wxTreeCtrl* bsaTree = nullptr;
 

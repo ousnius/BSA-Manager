@@ -207,22 +207,20 @@ int BSAManagerApp::ExportFolder(const wxString& bsaName, const wxString& folderN
 
 BSAManager::BSAManager(wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style) : wxFrame(parent, id, title, pos, size, style)
 {
+	SetIcon(wxIcon("BSAMANAGER_ICON"));
 	SetSizeHints(wxDefaultSize, wxDefaultSize);
-	
-	menuBar = new wxMenuBar();
 
-	wxMenu* menuFile = new wxMenu();
-	menuFile->Append(0, "Open BSA...");
-	menuFile->Append(1, "Set as default program");
-	menuBar->Append(menuFile, "File");
+	toolBar = CreateToolBar(wxTB_VERTICAL, wxID_ANY);
+	toolBar->AddTool(0, wxEmptyString, wxArtProvider::GetBitmap(wxART_FILE_OPEN), wxNullBitmap, wxITEM_NORMAL, "Open BSA...", "Open BSA...");
+	toolBar->AddTool(1, wxEmptyString, wxArtProvider::GetBitmap(wxART_GO_HOME), wxNullBitmap, wxITEM_NORMAL, "Set as default program", "Set as default program");
+	toolBar->Realize();
 
-	SetMenuBar(menuBar);
 	statusBar = CreateStatusBar();
 
 	wxBoxSizer* sizer;
 	sizer = new wxBoxSizer(wxVERTICAL);
 
-	bsaTree = new wxTreeCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_DEFAULT_STYLE | wxTR_HIDE_ROOT | wxTR_TWIST_BUTTONS | wxTR_MULTIPLE);
+	bsaTree = new wxTreeCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_DEFAULT_STYLE | wxTR_HIDE_ROOT | wxTR_TWIST_BUTTONS | wxTR_MULTIPLE | wxBORDER_STATIC);
 	sizer->Add(bsaTree, 1, wxALL | wxEXPAND, 0);
 
 	SetSizer(sizer);
@@ -233,8 +231,7 @@ BSAManager::BSAManager(wxWindow* parent, wxWindowID id, const wxString& title, c
 	// Bind Events
 	bsaTree->Bind(wxEVT_TREE_ITEM_RIGHT_CLICK, &BSAManager::bsaTreeOnTreeItemRightClick, this);
 	bsaTree->Bind(wxEVT_TREE_SEL_CHANGED, &BSAManager::bsaTreeOnTreeSelChanged, this);
-
-	menuFile->Bind(wxEVT_MENU, &BSAManager::menuFileClicked, this);
+	toolBar->Bind(wxEVT_TOOL, &BSAManager::toolBarOpenClicked, this);
 }
 
 BSAManager::~BSAManager()
@@ -242,6 +239,7 @@ BSAManager::~BSAManager()
 	// Unbind Events
 	bsaTree->Unbind(wxEVT_TREE_ITEM_RIGHT_CLICK, &BSAManager::bsaTreeOnTreeItemRightClick, this);
 	bsaTree->Unbind(wxEVT_TREE_SEL_CHANGED, &BSAManager::bsaTreeOnTreeSelChanged, this);
+	toolBar->Unbind(wxEVT_TOOL, &BSAManager::toolBarOpenClicked, this);
 }
 
 void BSAManager::bsaTreeOnTreeItemRightClick(wxTreeEvent& WXUNUSED(event))
@@ -368,7 +366,7 @@ void BSAManager::bsaTreeOnContextMenu(wxCommandEvent& event)
 	statusBar->SetStatusText("Ready!");
 }
 
-void BSAManager::menuFileClicked(wxCommandEvent& event)
+void BSAManager::toolBarOpenClicked(wxCommandEvent& event)
 {
 	switch (event.GetId())
 	{

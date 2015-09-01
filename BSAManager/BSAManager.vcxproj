@@ -80,12 +80,19 @@
     <ClInclude Include="FSBSA.h" />
     <ClInclude Include="FSEngine.h" />
     <ClInclude Include="FSManager.h" />
+    <ClInclude Include="Resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BSAManager.cpp" />
     <ClCompile Include="FSBSA.cpp" />
     <ClCompile Include="FSEngine.cpp" />
     <ClCompile Include="FSManager.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resource.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Icon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
