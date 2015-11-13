@@ -34,43 +34,27 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "FSManager.h"
 #include "FSEngine.h"
 #include "FSBSA.h"
+
 #include <algorithm>
 
 
 //! Global BSA file manager
 static FSManager *theFSManager = nullptr;
 
-FSManager* FSManager::get()
-{
+FSManager* FSManager::get() {
 	if (!theFSManager)
 		theFSManager = new FSManager();
 	return theFSManager;
 }
 
-void FSManager::del()
-{
-	if (theFSManager)
-	{
+void FSManager::del() {
+	if (theFSManager) {
 		delete theFSManager;
 		theFSManager = nullptr;
 	}
 }
 
-FSManager::FSManager()
-{
-
-}
-
-FSManager::~FSManager()
-{
-	for (auto it : archives)
-		delete it.second;
-
-	archives.clear();
-}
-
-std::list<FSArchiveFile*> FSManager::archiveList()
-{
+std::list<FSArchiveFile*> FSManager::archiveList() {
 	std::list<FSArchiveFile*> archives;
 
 	std::transform(get()->archives.begin(), get()->archives.end(), back_inserter(archives),
@@ -79,11 +63,19 @@ std::list<FSArchiveFile*> FSManager::archiveList()
 	return archives;
 }
 
-void FSManager::addArchives(wxArrayString archiveList)
-{
-	for (auto &archive : archiveList)
-	{
+void FSManager::addArchives(std::vector<std::string> archiveList) {
+	for (auto &archive : archiveList) {
 		if (FSArchiveHandler *a = FSArchiveHandler::openArchive(archive))
-			get()->archives[archive.ToStdString()] = a;
+			get()->archives[archive] = a;
 	}
+}
+
+FSManager::FSManager() {
+}
+
+FSManager::~FSManager() {
+	for (auto &it : archives)
+		delete it.second;
+
+	archives.clear();
 }

@@ -30,11 +30,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ***** END LICENCE BLOCK *****/
 
-
-#ifndef FSMANAGER_H
-#define FSMANAGER_H
+#pragma once
 
 #include <wx/arrstr.h>
+#include <vector>
 #include <map>
 #include <list>
 
@@ -43,16 +42,16 @@ class FSArchiveHandler;
 class FSArchiveFile;
 
 //! The file system manager class.
-class FSManager
-{
+class FSManager {
 public:
 	//! Gets the global file system manager
 	static FSManager *get();
+	//! Deletes the global file system manager
 	static void del();
 	//! Gets the list of globally registered BSA files
 	static std::list<FSArchiveFile*> archiveList();
 	//! Adds archives to the global list
-	static void addArchives(wxArrayString);
+	static void addArchives(std::vector<std::string>);
 
 protected:
 	//! Constructor
@@ -62,6 +61,3 @@ protected:
 
 	std::map<std::string, FSArchiveHandler*> archives;
 };
-
-#endif
-

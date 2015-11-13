@@ -77,6 +77,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="BSAManager.h" />
+    <ClInclude Include="DDS.h" />
     <ClInclude Include="FSBSA.h" />
     <ClInclude Include="FSEngine.h" />
     <ClInclude Include="FSManager.h" />

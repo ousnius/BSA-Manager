@@ -45,12 +45,17 @@ bool BSAManagerApp::OnCmdLineParsed(wxCmdLineParser& parser)
 void BSAManagerApp::InitBSA(wxArrayString files)
 {
 	frame->bsaTree->Freeze();
-	frame->statusBar->SetStatusText("Initializing BSAs...");
+	frame->statusBar->SetStatusText("Initializing archives...");
 
 	frame->bsaTree->DeleteAllItems();
 	tree.clear();
+
+	std::vector<std::string> vecFiles;
+	for (auto &f : files)
+		vecFiles.push_back(f.ToStdString());
+	
 	FSManager::del();
-	FSManager::addArchives(files);
+	FSManager::addArchives(vecFiles);
 
 	for (FSArchiveFile *archive : FSManager::archiveList())
 	{
@@ -69,7 +74,7 @@ void BSAManagerApp::InitBSA(wxArrayString files)
 void BSAManagerApp::LoadTree()
 {
 	if (frame->bsaTree && !frame->bsaTree->GetRootItem().IsOk())
-		frame->bsaTree->AddRoot("BSA");
+		frame->bsaTree->AddRoot("Archives");
 
 	std::string currentSub;
 	std::string bsaName;
@@ -80,7 +85,7 @@ void BSAManagerApp::LoadTree()
 	for (auto it : tree)
 	{
 		wxString iter(it);
-		if (iter.EndsWith(".bsa"))
+		if (iter.EndsWith(".bsa") || iter.EndsWith(".ba2"))
 		{
 			currentRoot = frame->bsaTree->GetRootItem();
 			currentSub.clear();
@@ -169,7 +174,7 @@ int BSAManagerApp::ExportFile(const wxString& bsaName, const wxString& fileName,
 	{
 		if (archive && archive->name() == bsaName)
 		{
-			if (!archive->exportFile(fileName, targetPath))
+			if (!archive->exportFile(fileName.ToStdString(), targetPath.ToStdString()))
 				return 1;
 
 			break;
@@ -185,7 +190,7 @@ int BSAManagerApp::ExportFolder(const wxString& bsaName, const wxString& folderN
 	{
 		if (archive && archive->name() == bsaName)
 		{
-			archive->addFilesOfFolders(folderName, bsaTree);
+			archive->addFilesOfFolders(folderName.ToStdString(), bsaTree);
 		}
 	}
 
@@ -211,7 +216,7 @@ BSAManager::BSAManager(wxWindow* parent, wxWindowID id, const wxString& title, c
 	SetSizeHints(wxDefaultSize, wxDefaultSize);
 
 	toolBar = CreateToolBar(wxTB_VERTICAL, wxID_ANY);
-	toolBar->AddTool(0, wxEmptyString, wxArtProvider::GetBitmap(wxART_FILE_OPEN), wxNullBitmap, wxITEM_NORMAL, "Open BSA...", "Open BSA...");
+	toolBar->AddTool(0, wxEmptyString, wxArtProvider::GetBitmap(wxART_FILE_OPEN), wxNullBitmap, wxITEM_NORMAL, "Open archive...", "Open archive...");
 	toolBar->AddTool(1, wxEmptyString, wxArtProvider::GetBitmap(wxART_GO_HOME), wxNullBitmap, wxITEM_NORMAL, "Set as default program", "Set as default program");
 	toolBar->Realize();
 
@@ -299,6 +304,9 @@ void BSAManager::bsaTreeOnContextMenu(wxCommandEvent& event)
 					text = ((BSATreeItemData*)bsaTree->GetItemData(id))->GetPath();
 
 				int bsaNamePos = text.Find(".bsa");
+				if (bsaNamePos == wxNOT_FOUND)
+					bsaNamePos = text.find(".ba2");
+
 				if (bsaNamePos != wxNOT_FOUND)
 				{
 					wxString bsaName(text.SubString(0, bsaNamePos + 3));
@@ -372,8 +380,11 @@ void BSAManager::toolBarOpenClicked(wxCommandEvent& event)
 	{
 	case 0: // Open
 	{
-		wxFileDialog file(this, "Choose one or more archives...", wxEmptyString, wxEmptyString, "BSA|*.bsa", wxFD_DEFAULT_STYLE | wxFD_MULTIPLE);
-		file.ShowModal();
+		wxFileDialog file(this, "Choose one or more archives...", wxEmptyString, wxEmptyString,
+			"Archives (*.bsa;*.ba2)|*.bsa;*.ba2", wxFD_DEFAULT_STYLE | wxFD_MULTIPLE);
+
+		if (file.ShowModal() != wxID_OK)
+			break;
 
 		wxArrayString files;
 		file.GetPaths(files);
@@ -384,7 +395,7 @@ void BSAManager::toolBarOpenClicked(wxCommandEvent& event)
 
 	case 1: // Set as default program
 	{
-		int res = wxMessageBox("Do you want to set this program as the .BSA default for all users (requires admin elevation)?", "BSA Manager", wxYES_NO);
+		int res = wxMessageBox("Do you want to set this program as the .BSA and .BA2 default for all users (requires admin elevation)?", "BSA Manager", wxYES_NO);
 		if (res == wxYES)
 		{
 			wxRegKey keyApp(wxRegKey::HKLM, "Software\\Classes\\Applications\\" + wxFileName::FileName(wxStandardPaths::Get().GetExecutablePath()).GetFullName() + "\\shell\\open\\command");
@@ -404,9 +415,13 @@ void BSAManager::toolBarOpenClicked(wxCommandEvent& event)
 			if (keyIcon.Create())
 				keyIcon.SetValue(wxEmptyString, wxStandardPaths::Get().GetExecutablePath() + ",0");
 
-			wxRegKey keyExt(wxRegKey::HKLM, "Software\\Classes\\.bsa");
-			if (keyExt.Create())
-				keyExt.SetValue(wxEmptyString, "BSAManager");
+			wxRegKey keyExtBSA(wxRegKey::HKLM, "Software\\Classes\\.bsa");
+			if (keyExtBSA.Create())
+				keyExtBSA.SetValue(wxEmptyString, "BSAManager");
+
+			wxRegKey keyExtBA2(wxRegKey::HKLM, "Software\\Classes\\.ba2");
+			if (keyExtBA2.Create())
+				keyExtBA2.SetValue(wxEmptyString, "BSAManager");
 		}
 		break;
 	}
@@ -420,7 +435,7 @@ bool DnDBSA::OnDropFiles(wxCoord, wxCoord, const wxArrayString& fileNames)
     {
 		wxArrayString bsaFileNames;
 		for (auto &fn : fileNames)
-			if (fn.EndsWith(".bsa"))
+			if (fn.EndsWith(".bsa") || fn.EndsWith(".ba2"))
 				bsaFileNames.Add(fn);
 
 		if (!bsaFileNames.IsEmpty())

@@ -31,14 +31,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***** END LICENCE BLOCK *****/
 
 
-#ifndef ARCHIVEENGINE_H
-#define ARCHIVEENGINE_H
+#pragma once
 
-#include <map>
-#include <vector>
 #include <wx/string.h>
 #include <wx/datetime.h>
 #include <wx/atomic.h>
+#include <vector>
 
 
 //! Provides a way to register an FSArchiveEngine with the application.
@@ -46,7 +44,7 @@ class FSArchiveHandler
 {
 public:
 	//! Opens a BSA for the specified file
-	static FSArchiveHandler *openArchive(const wxString&);
+	static FSArchiveHandler *openArchive(const std::string&);
 
 public:
 	//! Constructor
@@ -54,7 +52,7 @@ public:
 	//! Destructor
 	~FSArchiveHandler();
 
-	FSArchiveFile * getArchive() { return archive; }
+	FSArchiveFile *getArchive() { return archive; }
 
 protected:
 	class FSArchiveFile *archive;
@@ -72,19 +70,20 @@ public:
 	virtual bool open() = 0;
 	virtual void close() = 0;
 
-	virtual wxString base() const = 0;
-	virtual wxString name() const = 0;
-	virtual wxString path() const = 0;
+	virtual std::string base() const = 0;
+	virtual std::string name() const = 0;
+	virtual std::string path() const = 0;
 
-	virtual bool hasFolder(const wxString&) const = 0;
-	virtual bool hasFile(const wxString&) const = 0;
-	virtual wxInt64 fileSize(const wxString&) const = 0;
-	virtual void addFilesOfFolders(const wxString&, std::vector<std::string>&) const = 0;
+	virtual bool hasFolder(const std::string&) const = 0;
+	virtual bool hasFile(const std::string&) const = 0;
+	virtual wxInt64 fileSize(const std::string&) const = 0;
+	virtual void addFilesOfFolders(const std::string&, std::vector<std::string>&) const = 0;
 	virtual void fileTree(std::vector<std::string>&) const = 0;
-	virtual bool fileContents(const wxString&, wxMemoryBuffer&) = 0;
-	virtual bool exportFile(const wxString&, const wxString&) = 0;
-	virtual wxString absoluteFilePath(const wxString&) const = 0;
-	virtual wxDateTime fileTime(const wxString&) const = 0;
+	virtual bool fileContents(const std::string&, wxMemoryBuffer&) = 0;
+	virtual bool exportFile(const std::string&, const std::string&) = 0;
+	virtual std::string absoluteFilePath(const std::string&) const = 0;
+
+	virtual wxDateTime fileTime(const std::string&) const = 0;
 
 protected:
 	//! A reference counter for an implicitly shared class
@@ -92,5 +91,3 @@ protected:
 
 	friend class FSArchiveHandler;
 };
-
-#endif
