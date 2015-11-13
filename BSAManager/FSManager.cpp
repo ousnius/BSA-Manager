@@ -47,6 +47,10 @@ FSManager* FSManager::get() {
 	return theFSManager;
 }
 
+bool FSManager::exists() {
+	return theFSManager != nullptr;
+}
+
 void FSManager::del() {
 	if (theFSManager) {
 		delete theFSManager;
@@ -63,7 +67,7 @@ std::list<FSArchiveFile*> FSManager::archiveList() {
 	return archives;
 }
 
-void FSManager::addArchives(std::vector<std::string> archiveList) {
+void FSManager::addArchives(const std::vector<std::string>& archiveList) {
 	for (auto &archive : archiveList) {
 		if (FSArchiveHandler *a = FSArchiveHandler::openArchive(archive))
 			get()->archives[archive] = a;

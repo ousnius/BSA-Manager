@@ -46,12 +46,14 @@ class FSManager {
 public:
 	//! Gets the global file system manager
 	static FSManager *get();
+	//! Returns if the file manager exists already
+	static bool exists();
 	//! Deletes the global file system manager
 	static void del();
 	//! Gets the list of globally registered BSA files
 	static std::list<FSArchiveFile*> archiveList();
 	//! Adds archives to the global list
-	static void addArchives(std::vector<std::string>);
+	static void addArchives(const std::vector<std::string>&);
 
 protected:
 	//! Constructor
