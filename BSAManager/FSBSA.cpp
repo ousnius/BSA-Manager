@@ -37,7 +37,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <algorithm>
 
-#pragma warning (disable : 4389)
+#pragma warning (disable : 4389 4018)
 
 
 wxUint32 BSA::BSAFile::size() const {
@@ -472,6 +472,9 @@ bool BSA::fileContents(const std::string &fn, wxMemoryBuffer &content) {
 				ddsHeader.dwMipMapCount = file->tex.header.numMips;
 				ddsHeader.ddspf.dwSize = sizeof(DDS_PIXELFORMAT);
 				ddsHeader.dwSurfaceFlags = DDS_SURFACE_FLAGS_TEXTURE | DDS_SURFACE_FLAGS_MIPMAP;
+
+				if (file->tex.header.unk16 == 2049)
+					ddsHeader.dwCubemapFlags = DDS_CUBEMAP_ALLFACES;
 
 				bool ok = true;
 
