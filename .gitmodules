@@ -1,3 +1,0 @@
-[submodule "BSAManager/zlib"]
-	path = BSAManager/zlib
-	url = https://github.com/madler/zlib
