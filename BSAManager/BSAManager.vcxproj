@@ -47,7 +47,7 @@
       <AdditionalIncludeDirectories>..\..\wxWidgets\include\msvc;..\..\wxWidgets\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;LZ4_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -66,6 +66,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalIncludeDirectories>..\..\wxWidgets\include\msvc;..\..\wxWidgets\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>LZ4_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -81,13 +82,17 @@
     <ClInclude Include="FSBSA.h" />
     <ClInclude Include="FSEngine.h" />
     <ClInclude Include="FSManager.h" />
+    <ClInclude Include="lz4frame.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="xxhash.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BSAManager.cpp" />
     <ClCompile Include="FSBSA.cpp" />
     <ClCompile Include="FSEngine.cpp" />
     <ClCompile Include="FSManager.cpp" />
+    <ClCompile Include="lz4frame.c" />
+    <ClCompile Include="xxhash.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />

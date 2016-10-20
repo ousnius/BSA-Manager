@@ -29,6 +29,12 @@
     <ClInclude Include="DDS.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="lz4frame.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="xxhash.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BSAManager.cpp">
@@ -41,6 +47,12 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="FSManager.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="lz4frame.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="xxhash.c">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>
