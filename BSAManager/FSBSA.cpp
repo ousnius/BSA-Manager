@@ -77,14 +77,14 @@ static bool BSAReadSizedString(wxFile &bsa, std::string &s) {
 }
 
 wxMemoryBuffer gUncompress(const wxMemoryBuffer &data, int skip = 0) {
-	if (data.GetBufSize() <= 4) {
+	if (data.GetDataLen() <= 4) {
 		// Input data is truncated
 		return wxMemoryBuffer();
 	}
 
 	wxMemoryOutputStream output;
 
-	wxMemoryInputStream input((char*)data.GetData() + skip, data.GetBufSize());
+	wxMemoryInputStream input((char*)data.GetData() + skip, data.GetDataLen() - skip);
 	wxZlibInputStream zlibStream(input);
 	zlibStream.Read(output);
 
@@ -95,12 +95,12 @@ wxMemoryBuffer gUncompress(const wxMemoryBuffer &data, int skip = 0) {
 }
 
 wxMemoryBuffer lz4fUncompress(const wxMemoryBuffer &data) {
-	if (data.GetBufSize() <= 4) {
+	if (data.GetDataLen() <= 4) {
 		// Input data is truncated
 		return wxMemoryBuffer();
 	}
 
-	size_t srcSize = data.GetBufSize() - 4;
+	size_t srcSize = data.GetDataLen() - 4;
 	size_t dstSize = ((unsigned int*)data.GetData())[0];
 
 	wxMemoryBuffer result(dstSize);
@@ -552,8 +552,8 @@ bool BSA::fileContents(const std::string &fn, wxMemoryBuffer &content) {
 					content.AppendData(&ddsHeader10, sizeof(ddsHeader10));
 			}
 
-			wxMemoryBuffer firstChunk;
-			firstChunk.SetBufSize(filesz);
+			wxMemoryBuffer firstChunk(filesz);
+			firstChunk.SetDataLen(filesz);
 			if (ok != wxInvalidOffset && bsa.Read(firstChunk.GetData(), filesz) == filesz) {
 				if (file->sizeFlags > 0) {
 					// BSA
@@ -567,10 +567,8 @@ bool BSA::fileContents(const std::string &fn, wxMemoryBuffer &content) {
 							content.AppendData(firstChunk, firstChunk.GetDataLen());
 						}
 					}
-					else {
-						firstChunk.SetDataLen(filesz);
+					else
 						content.AppendData(firstChunk.GetData(), firstChunk.GetDataLen());
-					}
 				}
 				else if (file->packedLength > 0) {
 					// BA2
@@ -587,6 +585,7 @@ bool BSA::fileContents(const std::string &fn, wxMemoryBuffer &content) {
 
 							if (chunk.packedSize > 0) {
 								chunkData.SetBufSize(chunk.packedSize);
+								chunkData.SetDataLen(chunk.packedSize);
 								if (bsa.Read(chunkData.GetData(), chunk.packedSize) == chunk.packedSize)
 									chunkData = gUncompress(chunkData);
 
@@ -598,6 +597,7 @@ bool BSA::fileContents(const std::string &fn, wxMemoryBuffer &content) {
 							}
 							else {
 								chunkData.SetBufSize(chunk.unpackedSize);
+								chunkData.SetDataLen(chunk.unpackedSize);
 								if (!(bsa.Read(chunkData.GetData(), chunk.unpackedSize) == chunk.unpackedSize)) {
 									// Size does not match at chunk.offset
 									return false;
