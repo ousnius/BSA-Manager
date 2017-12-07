@@ -9,13 +9,13 @@ Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
 are met:
 1. Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
+   notice, this list of conditions and the following disclaimer.
 2. Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
-documentation and/or other materials provided with the distribution.
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
 3. The name of the NIF File Format Library and Tools project may not be
-used to endorse or promote products derived from this software
-without specific prior written permission.
+   used to endorse or promote products derived from this software
+   without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
 IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -242,12 +242,10 @@ bool BSA::open() {
 						bsa.Read((char*)&tex.header, 24);
 
 						std::vector<F4TexChunk> texChunks(tex.header.numChunks);
-						for (wxUint32 j = 0; j < tex.header.numChunks; j++)
-							bsa.Read((char*)&texChunks[j], 24);
+						bsa.Read(texChunks.data(), tex.header.numChunks * 24);
+						tex.chunks = std::move(texChunks);
 
-						tex.chunks = texChunks;
-
-						F4TexChunk chunk = tex.chunks[0];
+						const F4TexChunk& chunk = tex.chunks[0];
 						std::string fullFile = std::string(superbuffer + path_sizes[n], path_sizes[n + 1] - path_sizes[n]);
 						std::string file;
 						std::string folder;
@@ -303,7 +301,7 @@ bool BSA::open() {
 				throw std::string("file name seek");
 
 			wxMemoryBuffer fileNames(header.FileNameLength);
-			if (bsa.Read(fileNames.GetData(), header.FileNameLength) != header.FileNameLength)
+			if (bsa.Read(fileNames.GetData(), header.FileNameLength) != (ssize_t)header.FileNameLength)
 				throw std::string("file name read");
 
 			wxUint32 fileNameIndex = 0;
@@ -315,7 +313,7 @@ bool BSA::open() {
 			std::vector<BSAFolderInfo> folderInfos(header.FolderCount, initInfo);
 			if (version != SSE_BSAHEADER_VERSION) {
 				bool ok = true;
-				for (int i = 0; i < header.FolderCount; i++) {
+				for (wxUint32 i = 0; i < header.FolderCount; i++) {
 					ok &= bsa.Read((char *)&folderInfos[i], 8) == 8;		// Hash
 					ok &= bsa.Read((char *)&folderInfos[i] + 8, 4) == 4;	// File size
 					ok &= bsa.Read((char *)&folderInfos[i] + 16, 4) == 4;	// Offset: this is reading a uint32 into a uint64 whose memory must be zeroed
@@ -325,7 +323,7 @@ bool BSA::open() {
 				}
 			}
 			else {
-				if (bsa.Read((char *)folderInfos.data(), header.FolderCount * folderSize) != header.FolderCount * folderSize)
+				if (bsa.Read((char *)folderInfos.data(), header.FolderCount * folderSize) != (ssize_t)(header.FolderCount * folderSize))
 					throw std::string("folder info read");
 			}
 
@@ -341,7 +339,7 @@ bool BSA::open() {
 				wxUint32 fcnt = folderInfo.fileCount;
 				totalFileCount += fcnt;
 				std::vector<OBBSAFileInfo> fileInfos(fcnt);
-				if (bsa.Read((char *)fileInfos.data(), fcnt * sizeof(OBBSAFileInfo)) != fcnt * sizeof(OBBSAFileInfo))
+				if (bsa.Read((char *)fileInfos.data(), fcnt * sizeof(OBBSAFileInfo)) != (ssize_t)(fcnt * sizeof(OBBSAFileInfo)))
 					throw std::string("file info read");
 
 				for (const OBBSAFileInfo fileInfo : fileInfos) {
@@ -373,19 +371,19 @@ bool BSA::open() {
 
 			// file size/offset table
 			std::vector<MWBSAFileSizeOffset> sizeOffset(header.FileCount);
-			if (bsa.Read((char *)sizeOffset.data(), header.FileCount * sizeof(MWBSAFileSizeOffset)) != header.FileCount * sizeof(MWBSAFileSizeOffset))
+			if (bsa.Read((char *)sizeOffset.data(), header.FileCount * sizeof(MWBSAFileSizeOffset)) != (ssize_t)(header.FileCount * sizeof(MWBSAFileSizeOffset)))
 				throw std::string("file size/offset");
 
 			// filename offset table
 			std::vector<wxUint32> nameOffset(header.FileCount);
-			if (bsa.Read((char *)nameOffset.data(), header.FileCount * sizeof(wxUint32)) != header.FileCount * sizeof(wxUint32))
+			if (bsa.Read((char *)nameOffset.data(), header.FileCount * sizeof(wxUint32)) != (ssize_t)(header.FileCount * sizeof(wxUint32)))
 				throw std::string("file name offset");
 
 			// filenames. size is given by ( HashOffset - ( 8 * number of file/size offsets) - ( 4 * number of filenames) )
 			// i.e. ( HashOffset - ( 12 * number of files ) )
 			wxMemoryBuffer fileNames;
 			fileNames.SetBufSize(header.HashOffset - 12 * header.FileCount);
-			if (bsa.Read((char *)fileNames.GetData(), header.HashOffset - 12 * header.FileCount) != header.HashOffset - 12 * header.FileCount)
+			if (bsa.Read((char *)fileNames.GetData(), header.HashOffset - 12 * header.FileCount) != (ssize_t)(header.HashOffset - 12 * header.FileCount))
 				throw std::string("file names");
 
 			// table of 8 bytes of hash values follow, but we don't need to know what they are
@@ -439,7 +437,7 @@ wxInt64 BSA::fileSize(const std::string & fn) const {
 		wxUint64 size = file->unpackedLength;
 
 		if (file->tex.chunks.size()) {
-			for (int i = 1; i < file->tex.chunks.size(); i++) {
+			for (size_t i = 1; i < file->tex.chunks.size(); i++) {
 				size += file->tex.chunks[i].unpackedSize;
 			}
 		}
@@ -472,13 +470,13 @@ bool BSA::fileContents(const std::string &fn, wxMemoryBuffer &content) {
 		wxMutexLocker lock(bsaMutex);
 		if (bsa.Seek(file->offset)) {
 			wxInt64 filesz = file->size();
-			ssize_t ok = 1;
+			ssize_t fileok = 1;
 			if (namePrefix) {
 				char len;
-				ok = bsa.Read(&len, 1);
+				fileok = bsa.Read(&len, 1);
 				filesz -= len;
-				if (ok != wxInvalidOffset)
-					ok = bsa.Seek(file->offset + 1 + len);
+				if (fileok != wxInvalidOffset)
+					fileok = bsa.Seek(file->offset + 1 + len);
 			}
 
 			if (file->tex.chunks.size() > 0) {
@@ -491,7 +489,7 @@ bool BSA::fileContents(const std::string &fn, wxMemoryBuffer &content) {
 				ddsHeader.dwMipMapCount = file->tex.header.numMips;
 				ddsHeader.dwCaps = DDS_SURFACE_FLAGS_TEXTURE | DDS_SURFACE_FLAGS_MIPMAP;
 				ddsHeader.dwPitchOrLinearSize = file->tex.header.width * file->tex.header.height;	// 8bpp
-
+				
 				DDS_HEADER_DXT10 ddsHeader10 = {};
 				ddsHeader10.resourceDimension = DDS_DIMENSION_TEXTURE2D;
 				ddsHeader10.arraySize = 1;
@@ -506,16 +504,25 @@ bool BSA::fileContents(const std::string &fn, wxMemoryBuffer &content) {
 
 				switch (file->tex.header.format) {
 				case DXGI_FORMAT_BC1_UNORM:
+				case DXGI_FORMAT_BC1_UNORM_SRGB:
 					ddsHeader.ddspf = DDSPF_DXT1;
 					ddsHeader.dwPitchOrLinearSize /= 2;	// 4bpp
 					break;
 
 				case DXGI_FORMAT_BC2_UNORM:
+				case DXGI_FORMAT_BC2_UNORM_SRGB:
 					ddsHeader.ddspf = DDSPF_DXT3;
 					break;
 
 				case DXGI_FORMAT_BC3_UNORM:
+				case DXGI_FORMAT_BC3_UNORM_SRGB:
 					ddsHeader.ddspf = DDSPF_DXT5;
+					break;
+
+				case DXGI_FORMAT_BC4_UNORM:
+					ddsHeader.ddspf = DDSPF_DX10;
+					ddsHeader.dwPitchOrLinearSize /= 2;	// 4bpp
+					ddsHeader10.dxgiFormat = DXGI_FORMAT_BC4_UNORM;
 					break;
 
 				case DXGI_FORMAT_BC5_UNORM:
@@ -524,6 +531,7 @@ bool BSA::fileContents(const std::string &fn, wxMemoryBuffer &content) {
 					break;
 
 				case DXGI_FORMAT_BC7_UNORM:
+				case DXGI_FORMAT_BC7_UNORM_SRGB:
 					ddsHeader.ddspf = DDSPF_DX10;
 					ddsHeader10.dxgiFormat = DXGI_FORMAT_BC7_UNORM;
 					break;
@@ -534,7 +542,7 @@ bool BSA::fileContents(const std::string &fn, wxMemoryBuffer &content) {
 					break;
 
 				case DXGI_FORMAT_R8_UNORM:
-					ddsHeader.ddspf = DDSPF_L8;
+					ddsHeader.ddspf = DDSPF_R8;
 					break;
 
 				default:
@@ -554,7 +562,7 @@ bool BSA::fileContents(const std::string &fn, wxMemoryBuffer &content) {
 
 			wxMemoryBuffer firstChunk(filesz);
 			firstChunk.SetDataLen(filesz);
-			if (ok != wxInvalidOffset && bsa.Read(firstChunk.GetData(), filesz) == filesz) {
+			if (fileok != wxInvalidOffset && bsa.Read(firstChunk.GetData(), filesz) == filesz) {
 				if (file->sizeFlags > 0) {
 					// BSA
 					if (file->compressed() ^ compressToggle) {
@@ -571,22 +579,26 @@ bool BSA::fileContents(const std::string &fn, wxMemoryBuffer &content) {
 						content.AppendData(firstChunk.GetData(), firstChunk.GetDataLen());
 				}
 				else if (file->packedLength > 0) {
-					// BA2
+					// BA2 compressed
 					firstChunk = gUncompress(firstChunk);
 					content.AppendData(firstChunk, firstChunk.GetDataLen());
+				}
+				else {
+					// BA2 uncompressed
+					content.AppendData(firstChunk.GetData(), firstChunk.GetDataLen());
 				}
 
 				if (file->tex.chunks.size() > 0) {
 					// Start at 2nd chunk for BA2
-					for (int i = 1; i < file->tex.chunks.size(); i++) {
-						F4TexChunk chunk = file->tex.chunks[i];
+					for (size_t i = 1; i < file->tex.chunks.size(); i++) {
+						const F4TexChunk& chunk = file->tex.chunks[i];
 						if (bsa.Seek(chunk.offset)) {
 							wxMemoryBuffer chunkData;
 
 							if (chunk.packedSize > 0) {
 								chunkData.SetBufSize(chunk.packedSize);
 								chunkData.SetDataLen(chunk.packedSize);
-								if (bsa.Read(chunkData.GetData(), chunk.packedSize) == chunk.packedSize)
+								if (bsa.Read(chunkData.GetData(), chunk.packedSize) == (ssize_t)chunk.packedSize)
 									chunkData = gUncompress(chunkData);
 
 								if (chunkData.GetDataLen() != chunk.unpackedSize) {
@@ -598,7 +610,7 @@ bool BSA::fileContents(const std::string &fn, wxMemoryBuffer &content) {
 							else {
 								chunkData.SetBufSize(chunk.unpackedSize);
 								chunkData.SetDataLen(chunk.unpackedSize);
-								if (!(bsa.Read(chunkData.GetData(), chunk.unpackedSize) == chunk.unpackedSize)) {
+								if (!(bsa.Read(chunkData.GetData(), chunk.unpackedSize) == (ssize_t)chunk.unpackedSize)) {
 									// Size does not match at chunk.offset
 									return false;
 								}

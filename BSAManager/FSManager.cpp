@@ -33,9 +33,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "FSManager.h"
 #include "FSEngine.h"
-#include "FSBSA.h"
 
 #include <algorithm>
+#include <iterator>
 
 
 //! Global BSA file manager
@@ -61,7 +61,7 @@ void FSManager::del() {
 std::list<FSArchiveFile*> FSManager::archiveList() {
 	std::list<FSArchiveFile*> archives;
 
-	std::transform(get()->archives.begin(), get()->archives.end(), back_inserter(archives),
+	std::transform(get()->archives.begin(), get()->archives.end(), std::back_inserter(archives),
 		[](std::map<std::string, FSArchiveHandler*>::value_type& val){ return val.second->getArchive(); });
 
 	return archives;
