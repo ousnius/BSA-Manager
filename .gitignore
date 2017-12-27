@@ -86,3 +86,5 @@ $RECYCLE.BIN/
 *.opensdf
 *.res
 .vs
+*.ipdb
+*.iobj
